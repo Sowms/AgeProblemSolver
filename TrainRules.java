@@ -1,11 +1,23 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import jpl.Atom;
+import jpl.Compound;
+import jpl.Query;
+import jpl.Term;
+import jpl.Variable;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
@@ -33,22 +45,26 @@ public class TrainRules {
 					String foo = num1 + "" + op[j] + "" + num2 + op[k] + num3 ;
 					double val = (Double) engine.eval(foo);
 					if (val == 0)
-						return foo;
+						return "V1" + op[j] + "V2" + op[k] +"V3";
 				}
 			}
 		    
 		}
 		return ans;
 	}
-	public static void convertProblem(String problem, StanfordCoreNLP pipeline) {
+	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException {
 		
 		problem = WordProblemSolver.solveWordProblems(problem, pipeline);
 		Annotation document = new Annotation(problem);
 		pipeline.annotate(document);
 		int[] times = new int[10];
+		int size = 0;
 		int timer = 0;
+		times[0] = 0;
+		size++;
 		boolean eventFlag = false;
 	    List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+	    String program = "";
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	boolean quesFlag = false;
@@ -65,6 +81,7 @@ public class TrainRules {
 	    		}
 	    		else if (pos.contains("CD")) {
 	    			//is it timer?
+	    			int prev = timer;
 	    			if (sentence.toString().toLowerCase().contains("in "+token.originalText()+" year"))
 	    				timer = Integer.parseInt(token.originalText());
 	    			else if (sentence.toString().toLowerCase().contains(token.originalText()+" year")) {
@@ -79,11 +96,17 @@ public class TrainRules {
 	    				timer = -Integer.parseInt(token.originalText());
 	    			else
 	    				arguments.add(token.originalText().toLowerCase());
+	    			if (prev != timer) {
+	    				times[size] = timer;
+	    				size++;
+	    			}
 	    		}
 	    		else if (pos.contains("VB")) {
 	    			 if (!token.lemma().equals("be")) {
 	    				 eventFlag = true;
 	    				 timer++;
+	    				 times[size] = timer;
+		    			 size++;
 	    			 }
 	    		}
 	    		else if (!pos.contains("PRP") && !pos.contains("MD") && !pos.contains("DT") && !pos.contains(".")) {
@@ -111,9 +134,114 @@ public class TrainRules {
 	    	stmt = stmt + ")," + timer + ").";
 	    	stmt = stmt.replaceAll(",\\)", ")");
 	    	System.out.println(stmt);
+	    	program = program+stmt+"\n";
 	    }
+	    program = ans+"\n"+program;
+	    if (!ans.isEmpty())
+	    	addRules(program,size,times);
+	    return program;
 	}
-	public static void main(String[] args) throws ScriptException {
+	
+	public static void addRules(String program, int size, int[] times) throws IOException, ScriptException {
+	    FileWriter fw = new FileWriter(new File("foo.pl"));
+    	BufferedWriter bw = new BufferedWriter(fw);
+    	bw.write(program);
+    	bw.close();
+    	Query q1 = new Query("consult('foo.pl')");
+    	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
+		
+    	fw = new FileWriter(new File("rules.pl"));
+    	bw = new BufferedWriter(fw);
+    	
+    	for (int i=0; i<size; i++) {
+    		Query q4 = new Query(new Compound("holdsAt", new Term[] {new Variable("X"), new jpl.Integer(times[i])}));
+    		ArrayList<String> antecedents = new ArrayList();
+    		while (q4.hasMoreSolutions()) {
+    			String match = q4.nextSolution().get("X").toString();
+    			if (match.contains("+(")) { 
+    				Pattern wordPattern = Pattern.compile("\\+\\(\\d+\\,\\s\\d+\\)");
+    				Matcher matcher = wordPattern.matcher(match);
+					if (matcher.find()) {
+						String cal = matcher.group();
+					//	System.out.println(cal);
+						Pattern numPattern = Pattern.compile("\\d+");
+						Matcher numMatcher = numPattern.matcher(cal);
+						String eval = "";
+						while (numMatcher.find()) {
+							eval = eval + numMatcher.group()+"+";
+						}
+						eval = eval.substring(0,eval.length()-1);
+					//	System.out.println(eval);
+						ScriptEngineManager mgr = new ScriptEngineManager();
+					    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+					    double a = (Double) engine.eval(eval);
+					    match = match.replace(cal, (a+"").replace(".0", ""));
+					}
+				}
+    			System.out.println(match);
+    			if (!antecedents.contains(match))
+    				antecedents.add(match);
+    		}
+    		String rule = makeRule(antecedents);
+    		bw.write(rule+"\n");
+    		System.out.println("___");
+    		q4.close();
+    	}
+    	bw.close();
+	}
+	private static String makeRule(ArrayList<String> antecedents) throws ScriptException {
+		String rule = "";
+		Pattern numPattern = Pattern.compile("\\d+");
+		Pattern wordPattern = Pattern.compile("\\w+");
+		HashMap<String,String> vars = new HashMap<>();
+		int counter = 1, argCount = 1;
+		int[] numbers = new int[3];
+		for (String s : antecedents) {
+			Matcher m = numPattern.matcher(s);
+			while (m.find()) {
+				String num = m.group();
+				if (!vars.containsKey(num)) {
+					vars.put(num, "V"+counter);
+					numbers[counter-1] = Integer.parseInt(num);
+					counter++;
+				}
+			}
+			m = wordPattern.matcher(s);
+			while (m.find()) {
+				String arg = m.group();
+				if (!s.contains(arg+"(")) {
+					if (!vars.containsKey(arg)) {
+						vars.put(arg,"X"+argCount);
+						argCount++;
+					}
+				}
+			}
+		}
+		//System.out.println(vars);
+		String expr = findRelation(numbers[0],numbers[1],numbers[2]);
+		for (String s: antecedents) {
+			String newAntecedent = new String(s);
+			Matcher m = numPattern.matcher(s);
+			while (m.find()) {
+				String num = m.group();
+				if (newAntecedent.contains(num))
+					newAntecedent = newAntecedent.replace(num, vars.get(num));
+			}
+			m = wordPattern.matcher(s);
+			while (m.find()) {
+				String arg = m.group();
+				if (newAntecedent.contains(arg) && vars.containsKey(arg))
+					newAntecedent = newAntecedent.replace(arg, vars.get(arg));
+			}
+			newAntecedent = "holdsAt(" + newAntecedent + ",T)";
+			rule = rule + newAntecedent + ", ";
+		}
+		rule = rule.substring(0, rule.length()-2);
+		rule = "equation("+expr+", 0) :- " + rule;
+		System.out.println(rule);
+		return rule;
+	}
+	public static void main(String[] args) throws ScriptException, IOException {
 		System.out.println(findRelation(20,10,2));
 		System.out.println(findRelation(10,20,2));
 		System.out.println(findRelation(10,2,20));
@@ -123,7 +251,8 @@ public class TrainRules {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be twice as old as his brother. What are their present ages?", pipeline);
+	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
+		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
 	}
 
 }

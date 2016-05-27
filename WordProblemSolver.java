@@ -1,10 +1,13 @@
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Map.Entry;
+
+import javax.script.ScriptException;
 
 import edu.stanford.nlp.dcoref.CorefChain;
 import edu.stanford.nlp.dcoref.CorefChain.CorefMention;
@@ -95,18 +98,19 @@ public class WordProblemSolver {
         return problem;
 		
 	}
-	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) {
+	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException {
 		String corefProblem = coref(problem,pipeline);
 		// change number names to numbers
 		String conjFreeProblem = ConjunctionResolver.parse(corefProblem, pipeline);
 		System.out.println(conjFreeProblem);
+		String p = TrainRules.convertProblem(conjFreeProblem, "", pipeline);
 		return conjFreeProblem;
 	}
-	public static void main(String[] main) {
+	public static void main(String[] main) throws IOException, ScriptException {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		solveWordProblems("A boy is 10 years older than his brother. In 4 years, he will be twice as old as his brother. What are their present ages?", pipeline);
+		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
 	}
 
 	        
