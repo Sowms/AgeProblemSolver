@@ -167,7 +167,7 @@ public class WordProblemSolver {
 	    			if (!actors.contains(token.originalText().toLowerCase()))
 	    				actors.add(token.originalText().toLowerCase());
 	    		}
-	    		if (pos.startsWith("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
+	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
 	    				int counter = 0; char base = 'x', varBase = 'X';
 	    				for (String actor : actors) {

@@ -72,7 +72,7 @@ public class TrainRules {
 	    	String predicate = "";
 	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
-	    		if (pos.startsWith("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
+	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			quesFlag = true;
 	    			break;
 	    		}
