@@ -54,7 +54,7 @@ public class TrainRules {
 	}
 	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException {
 		
-		problem = WordProblemSolver.solveWordProblems(problem, pipeline);
+		problem = WordProblemSolver.coref(problem, pipeline);
 		Annotation document = new Annotation(problem);
 		pipeline.annotate(document);
 		int[] times = new int[10];
@@ -72,7 +72,7 @@ public class TrainRules {
 	    	String predicate = "";
 	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
-	    		if (pos.contains("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
+	    		if (pos.startsWith("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
 	    			quesFlag = true;
 	    			continue;
 	    		}
@@ -237,7 +237,7 @@ public class TrainRules {
 			rule = rule + newAntecedent + ", ";
 		}
 		rule = rule.substring(0, rule.length()-2);
-		rule = "equation("+expr+", 0) :- " + rule;
+		rule = "equation("+expr+", 0) :- " + rule + ".";
 		System.out.println(rule);
 		return rule;
 	}
@@ -252,7 +252,7 @@ public class TrainRules {
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
-		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
+		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 as old as his brother. What are their present ages?", ans, pipeline);
 	}
 
 }

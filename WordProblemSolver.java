@@ -1,5 +1,11 @@
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -9,6 +15,10 @@ import java.util.Map.Entry;
 
 import javax.script.ScriptException;
 
+import jpl.Compound;
+import jpl.Query;
+import jpl.Term;
+import jpl.Variable;
 import edu.stanford.nlp.dcoref.CorefChain;
 import edu.stanford.nlp.dcoref.CorefChain.CorefMention;
 import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefChainAnnotation;
@@ -98,19 +108,86 @@ public class WordProblemSolver {
         return problem;
 		
 	}
+	/*public static String convertInfix (String prefix) {
+		String[] stack = new String[100];
+		int top = -1;
+		String expr = ""; int pos = 0;
+		while (!prefix.isEmpty()) {
+			String s = "";
+			while (prefix.charAt(0) != ) {
+				
+			}
+			prefix = prefix.substring(1,prefix.length());
+			if (c == ',')
+				continue;
+			if (c == ')') {
+				char pop = ' ';
+				while (pop != '(')
+				
+			}
+		}
+		return expr;
+	}*/
 	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException {
 		String corefProblem = coref(problem,pipeline);
 		// change number names to numbers
 		String conjFreeProblem = ConjunctionResolver.parse(corefProblem, pipeline);
 		System.out.println(conjFreeProblem);
 		String p = TrainRules.convertProblem(conjFreeProblem, "", pipeline);
+		Annotation document = new Annotation(conjFreeProblem);
+		pipeline.annotate(document);
+		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+	    ArrayList<String> actors = new ArrayList<>();
+	    for (CoreMap sentence : sentences) {
+	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
+	    	for (CoreLabel token: tokens) {
+	    		String pos = token.tag();
+	    		if (pos.contains("NN") && !token.originalText().contains("years")) {
+	    			if (!actors.contains(token.originalText().toLowerCase()))
+	    				actors.add(token.originalText().toLowerCase());
+	    		}
+	    		if (pos.startsWith("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
+	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
+	    				int counter = 0; char base = 'x', varBase = 'X';
+	    				for (String actor : actors) {
+	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"+"+(char)(varBase+counter)+"),"+(char)(varBase+counter)+").\n" + p;
+	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"),0).\n" + p;
+	    					counter++;
+	    				}
+	    				FileWriter fw = new FileWriter(new File("problem.pl"));
+	    				FileReader fr = new FileReader(new File("rules.pl"));
+	    				BufferedReader br = new BufferedReader(fr);
+	    				String rules = "";
+	    				String s;
+						while ((s = br.readLine()) != null)
+	    					rules = rules + s + "\n";
+						br.close();
+	    				BufferedWriter bw = new BufferedWriter(fw);
+	    		    	bw.write(p);
+	    		    	bw.write(rules);
+	    		    	bw.close();
+	    		    	Query q1 = new Query("consult('problem.pl')");
+	    		    	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
+	    		    	Query q4 = new Query(new Compound("equation", new Term[] {new Variable("A"), new Variable("B")}));
+	    	    		while (q4.hasMoreSolutions()) {
+	    	    			String match1 = q4.nextSolution().get("A").toString();
+	    	    			String match2 = q4.nextSolution().get("B").toString();
+	    	    			System.out.println(match1+"="+match2);
+	    	    		}
+	    			}
+	    		}
+	    		
+	    	}
+	    }	
+		pipeline.annotate(document);
+		
 		return conjFreeProblem;
 	}
 	public static void main(String[] main) throws IOException, ScriptException {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
+		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 as old as his brother. What are their present ages?", pipeline);
 	}
 
 	        
