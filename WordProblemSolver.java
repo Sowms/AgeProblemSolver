@@ -108,26 +108,45 @@ public class WordProblemSolver {
         return problem;
 		
 	}
-	/*public static String convertInfix (String prefix) {
+	public static String convertInfix (String prefix) {
 		String[] stack = new String[100];
+		prefix = prefix.replaceAll(" ", "");
 		int top = -1;
-		String expr = ""; int pos = 0;
 		while (!prefix.isEmpty()) {
 			String s = "";
-			while (prefix.charAt(0) != ) {
-				
+			while (prefix.charAt(0) != '(' && prefix.charAt(0) != ')' && prefix.charAt(0) != ',') {
+				s = s + prefix.charAt(0);
+				prefix = prefix.substring(1, prefix.length());
 			}
-			prefix = prefix.substring(1,prefix.length());
-			if (c == ',')
+			if (!s.isEmpty()) {
+				top++;
+				stack[top] = s;
+			}
+			if (prefix.charAt(0) == '(') {
+				s = "(";
+				prefix = prefix.substring(1, prefix.length());
+				top++;
+				stack[top] = s;
+			}
+			if (prefix.charAt(0) == ',') {
+				prefix = prefix.substring(1,prefix.length());
 				continue;
-			if (c == ')') {
-				char pop = ' ';
-				while (pop != '(')
-				
+			}
+			if (prefix.charAt(0) == ')') {
+				String s2 = stack[top];
+				top--;
+				String s1 = stack[top];
+				top--;
+				top--;
+				String op = stack[top];
+				top--;
+				top++;
+				stack[top] = "["+s1+op+s2+"]";
+				prefix = prefix.substring(1,prefix.length());
 			}
 		}
-		return expr;
-	}*/
+		return stack[top].replaceAll("\\[", "(").replaceAll("\\]", ")");
+	}
 	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException {
 		String corefProblem = coref(problem,pipeline);
 		// change number names to numbers
@@ -168,11 +187,13 @@ public class WordProblemSolver {
 	    		    	bw.close();
 	    		    	Query q1 = new Query("consult('problem.pl')");
 	    		    	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
-	    		    	Query q4 = new Query(new Compound("equation", new Term[] {new Variable("A"), new Variable("B")}));
+	    		    	Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
 	    	    		while (q4.hasMoreSolutions()) {
-	    	    			String match1 = q4.nextSolution().get("A").toString();
-	    	    			String match2 = q4.nextSolution().get("B").toString();
+	    	    			String match1 = q4.nextSolution().get("X").toString();
+	    	    			String match2 = q4.nextSolution().get("Y").toString();
 	    	    			System.out.println(match1+"="+match2);
+	    	    			System.out.println(convertInfix(new String(match1))+"="+match2);
+	    	    			
 	    	    		}
 	    			}
 	    		}
