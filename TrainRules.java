@@ -74,7 +74,7 @@ public class TrainRules {
 	    		String pos = token.tag();
 	    		if (pos.startsWith("W") || token.originalText().contains("find") || token.originalText().contains("calculate")) {
 	    			quesFlag = true;
-	    			continue;
+	    			break;
 	    		}
 	    		if (pos.contains("NN") && !token.originalText().contains("years")) {
 	    			arguments.add(token.originalText().toLowerCase());

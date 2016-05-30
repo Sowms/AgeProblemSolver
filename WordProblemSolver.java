@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptException;
 
@@ -188,13 +190,23 @@ public class WordProblemSolver {
 	    		    	Query q1 = new Query("consult('problem.pl')");
 	    		    	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
 	    		    	Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
+	    		    	String equations = "";
 	    	    		while (q4.hasMoreSolutions()) {
 	    	    			String match1 = q4.nextSolution().get("X").toString();
 	    	    			String match2 = q4.nextSolution().get("Y").toString();
 	    	    			System.out.println(match1+"="+match2);
-	    	    			System.out.println(convertInfix(new String(match1))+"="+match2);
+	    	    			equations = convertInfix(new String(match1))+"="+match2 +", "+equations;
 	    	    			
 	    	    		}
+	    	    		equations = equations.substring(0,equations.length()-2);
+	    	    		String ans = WolframTester.solveProblem(equations);
+	    	    		Pattern numPattern = Pattern.compile("\\d+");
+						Matcher numMatcher = numPattern.matcher(ans);
+						counter = 0;
+						while (numMatcher.find()) {
+							System.out.println("Age of " + actors.get(counter) + " = " + numMatcher.group() + " years");
+							counter++;
+						}
 	    			}
 	    		}
 	    		
@@ -209,6 +221,8 @@ public class WordProblemSolver {
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 as old as his brother. What are their present ages?", pipeline);
+		solveWordProblems("A father is 4 as old as his son. In 20 years the father will be 2 as old as his son. Find the present age of each.", pipeline);
+		
 	}
 
 	        
