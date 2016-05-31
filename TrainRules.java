@@ -52,7 +52,7 @@ public class TrainRules {
 		}
 		return ans;
 	}
-	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException {
+	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		
 		problem = WordProblemSolver.coref(problem, pipeline);
 		Annotation document = new Annotation(problem);
@@ -76,7 +76,8 @@ public class TrainRules {
 	    			quesFlag = true;
 	    			break;
 	    		}
-	    		if (pos.contains("NN") && !token.originalText().contains("years")) {
+	    		WordNetInterface.seen = new ArrayList<>();
+	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			arguments.add(token.originalText().toLowerCase());
 	    		}
 	    		else if (pos.contains("CD")) {
@@ -150,7 +151,7 @@ public class TrainRules {
     	Query q1 = new Query("consult('foo.pl')");
     	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
 		
-    	fw = new FileWriter(new File("rules.pl"));
+    	fw = new FileWriter(new File("rules.pl"), true);
     	bw = new BufferedWriter(fw);
     	
     	for (int i=0; i<size; i++) {
@@ -241,7 +242,7 @@ public class TrainRules {
 		System.out.println(rule);
 		return rule;
 	}
-	public static void main(String[] args) throws ScriptException, IOException {
+	public static void main(String[] args) throws ScriptException, IOException, NumberFormatException, InterruptedException {
 		System.out.println(findRelation(20,10,2));
 		System.out.println(findRelation(10,20,2));
 		System.out.println(findRelation(10,2,20));
@@ -252,7 +253,9 @@ public class TrainRules {
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
-		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 as old as his brother. What are their present ages?", ans, pipeline);
+		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
+		//ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(boy,46+X),X).\nholdsAt(age(brother,37+Y),Y).";
+		//convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", ans, pipeline);
 	}
 
 }

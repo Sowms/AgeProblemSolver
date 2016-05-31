@@ -149,7 +149,7 @@ public class WordProblemSolver {
 		}
 		return stack[top].replaceAll("\\[", "(").replaceAll("\\]", ")");
 	}
-	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException {
+	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		String corefProblem = coref(problem,pipeline);
 		// change number names to numbers
 		String conjFreeProblem = ConjunctionResolver.parse(corefProblem, pipeline);
@@ -163,7 +163,8 @@ public class WordProblemSolver {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
-	    		if (pos.contains("NN") && !token.originalText().contains("years")) {
+	    		WordNetInterface.seen = new ArrayList<>();
+	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			if (!actors.contains(token.originalText().toLowerCase()))
 	    				actors.add(token.originalText().toLowerCase());
 	    		}
@@ -216,13 +217,13 @@ public class WordProblemSolver {
 		
 		return conjFreeProblem;
 	}
-	public static void main(String[] main) throws IOException, ScriptException {
+	public static void main(String[] main) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 as old as his brother. What are their present ages?", pipeline);
-		solveWordProblems("A father is 4 as old as his son. In 20 years the father will be 2 as old as his son. Find the present age of each.", pipeline);
-		
+		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
+		solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
+		//solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", pipeline);
 	}
 
 	        
