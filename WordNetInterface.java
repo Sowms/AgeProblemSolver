@@ -15,6 +15,8 @@ public class WordNetInterface {
 	    Synset[] synsets = database.getSynsets(current, SynsetType.NOUN); 
 	    ArrayList<String> parents = new ArrayList<String>();
         //for (Synset synset : synsets) {
+	    	if (synsets.length == 0)
+	    		return parents;
         	nounSynset = (NounSynset)(synsets[0]);
         	for (NounSynset hypernym : nounSynset.getHypernyms()) {
         		for (String sense : hypernym.getWordForms()) {

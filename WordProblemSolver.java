@@ -73,14 +73,14 @@ public class WordProblemSolver {
                 	}
                 	if (clust.matches("\\d+\\.\\d*")||clust.matches(".*\\d.*"))
                 		continue;
-                	////////System.err.println(clust+clust2);
+                	//System.err.println(clust+clust2);
                 	if (clust.toLowerCase().contains("they") && clust2.toLowerCase().contains("their"))
                 		continue;
                 	if (clust.toLowerCase().contains("their") && clust2.toLowerCase().contains("they"))
                 		continue;
                 	if (clust.contains("'s")) {
                 		String root = clust.replace("'s", "").trim();
-                		////System.out.println(root+"|"+clust+"|"+clust2);
+                		//System.out.println(root+"|"+clust+"|"+clust2);
                 		if (!clust2.equals("his") && !clust2.equals("theirs") && !clust2.equals("hers"))
                 			coref.put(clust2, root);
                 		else if (!clust.contains(clust2))
@@ -155,6 +155,7 @@ public class WordProblemSolver {
 		String conjFreeProblem = ConjunctionResolver.parse(corefProblem, pipeline);
 		System.out.println(conjFreeProblem);
 		String p = TrainRules.convertProblem(conjFreeProblem, "", pipeline);
+		System.out.println(p);
 		Annotation document = new Annotation(conjFreeProblem);
 		pipeline.annotate(document);
 		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
@@ -168,6 +169,9 @@ public class WordProblemSolver {
 	    			if (!actors.contains(token.originalText().toLowerCase()))
 	    				actors.add(token.originalText().toLowerCase());
 	    		}
+	    		if (pos.contains("NNP"))
+	    				if (!actors.contains(token.originalText().toLowerCase()))
+		    				actors.add(token.originalText().toLowerCase());
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
 	    				int counter = 0; char base = 'x', varBase = 'X';
@@ -195,7 +199,7 @@ public class WordProblemSolver {
 	    	    		while (q4.hasMoreSolutions()) {
 	    	    			String match1 = q4.nextSolution().get("X").toString();
 	    	    			String match2 = q4.nextSolution().get("Y").toString();
-	    	    			System.out.println(match1+"="+match2);
+	    	    			//System.out.println(match1+"="+match2);
 	    	    			equations = convertInfix(new String(match1))+"="+match2 +", "+equations;
 	    	    			
 	    	    		}
@@ -221,9 +225,11 @@ public class WordProblemSolver {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
-		solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
+	    //solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
+		//solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
 		//solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", pipeline);
+		//solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of Tim and Joann ages will be 79. How old are they now?",pipeline);
+		solveWordProblems("The sum of Jason and Mandy ages is 35. 10 years ago Jason was 2 times as old as Mandy. How old are they now?", pipeline);
 	}
 
 	        

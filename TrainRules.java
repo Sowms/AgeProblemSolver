@@ -80,21 +80,23 @@ public class TrainRules {
 	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			arguments.add(token.originalText().toLowerCase());
 	    		}
+	    		else if (pos.contains("NNP"))
+	    			arguments.add(token.originalText().toLowerCase());
 	    		else if (pos.contains("CD")) {
 	    			//is it timer?
 	    			int prev = timer;
 	    			if (sentence.toString().toLowerCase().contains("in "+token.originalText()+" year"))
 	    				timer = Integer.parseInt(token.originalText());
 	    			else if (sentence.toString().toLowerCase().contains(token.originalText()+" year")) {
-	    				if (sentence.toString().toLowerCase().contains(token.originalText()+" from now"))
+	    				if (sentence.toString().toLowerCase().contains(token.originalText()+" years from now"))
 	    					timer = Integer.parseInt(token.originalText());
-	    				else
-	    					arguments.add(token.originalText().toLowerCase());
+	    				else if (sentence.toString().toLowerCase().contains(token.originalText()+" years ago"))
+	    					timer = Integer.parseInt("-"+token.originalText());
+	    				else if (sentence.toString().toLowerCase().contains(token.originalText()+" years before"))
+		    				timer = Integer.parseInt("-"+token.originalText());
+		    			else
+		    				arguments.add(token.originalText().toLowerCase());
 	    			}
-	    			else if (sentence.toString().toLowerCase().contains(token.originalText()+" ago "))
-	    				timer = -Integer.parseInt(token.originalText());
-	    			else if (sentence.toString().toLowerCase().contains(token.originalText()+" before "))
-	    				timer = -Integer.parseInt(token.originalText());
 	    			else
 	    				arguments.add(token.originalText().toLowerCase());
 	    			if (prev != timer) {
@@ -110,7 +112,7 @@ public class TrainRules {
 		    			 size++;
 	    			 }
 	    		}
-	    		else if (!pos.contains("PRP") && !pos.contains("MD") && !pos.contains("DT") && !pos.contains(".")) {
+	    		else if (!pos.contains("PRP") && !pos.contains("CC") && !pos.contains("RB") && !pos.contains("MD") && !pos.contains("DT") && !pos.contains(".")) {
 	    			if (!pos.contains("IN") && !pos.contains(",")) {
 	    				if (!predicate.isEmpty() && !token.originalText().contains("year")) {
 	    					predicate = predicate + token.originalText().substring(0,1).toUpperCase();
@@ -252,10 +254,14 @@ public class TrainRules {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+	    FileWriter fw = new FileWriter(new File("rules.pl"));
+	    BufferedWriter bw = new BufferedWriter(fw);
+	    bw.write("");
+	    bw.close();
 	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
 		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
-		//ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(boy,46+X),X).\nholdsAt(age(brother,37+Y),Y).";
-		//convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", ans, pipeline);
+		ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(brandon,46+X),X).\nholdsAt(age(ronda,37+Y),Y).";
+		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", ans, pipeline);
 	}
 
 }
