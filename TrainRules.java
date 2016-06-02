@@ -65,6 +65,7 @@ public class TrainRules {
 		boolean eventFlag = false;
 	    List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 	    String program = "";
+	    ArrayList<String> actors = new ArrayList<>();
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	boolean quesFlag = false;
@@ -79,9 +80,12 @@ public class TrainRules {
 	    		WordNetInterface.seen = new ArrayList<>();
 	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			arguments.add(token.originalText().toLowerCase());
+	    			actors.add(token.originalText().toLowerCase());
 	    		}
-	    		else if (pos.contains("NNP"))
+	    		else if (pos.contains("NNP")) {
 	    			arguments.add(token.originalText().toLowerCase());
+	    			actors.add(token.originalText().toLowerCase());
+	    		}
 	    		else if (pos.contains("CD")) {
 	    			//is it timer?
 	    			int prev = timer;
@@ -131,10 +135,16 @@ public class TrainRules {
 	    	else
 	    		begin = "holdsAt";
 	    	String stmt = begin + "(" + predicate + "(";
+	    	//System.out.println(sentence.toString().contains("their") + "|" + actors);
+	    	if (sentence.toString().contains("their"))
+	    		arguments.addAll(actors);
 	    	for (String s : arguments) {
 	    		stmt = stmt + s +",";
 	    	}
-	    	stmt = stmt + ")," + timer + ").";
+	    	if (timer < 0)
+	    		stmt = stmt + ")," + "(" + timer + ")" + ").";
+	    	else
+	    		stmt = stmt + ")," + timer + ").";
 	    	stmt = stmt.replaceAll(",\\)", ")");
 	    	System.out.println(stmt);
 	    	program = program+stmt+"\n";
@@ -162,12 +172,11 @@ public class TrainRules {
     		while (q4.hasMoreSolutions()) {
     			String match = q4.nextSolution().get("X").toString();
     			if (match.contains("+(")) { 
-    				Pattern wordPattern = Pattern.compile("\\+\\(\\d+\\,\\s\\d+\\)");
+    				Pattern wordPattern = Pattern.compile("\\+\\((\\+|-)*\\d+\\,\\s(\\+|-)*\\d+\\)");
     				Matcher matcher = wordPattern.matcher(match);
 					if (matcher.find()) {
 						String cal = matcher.group();
-					//	System.out.println(cal);
-						Pattern numPattern = Pattern.compile("\\d+");
+						Pattern numPattern = Pattern.compile("(\\+|-)*\\d+");
 						Matcher numMatcher = numPattern.matcher(cal);
 						String eval = "";
 						while (numMatcher.find()) {
@@ -178,6 +187,7 @@ public class TrainRules {
 						ScriptEngineManager mgr = new ScriptEngineManager();
 					    ScriptEngine engine = mgr.getEngineByName("JavaScript");
 					    double a = (Double) engine.eval(eval);
+					  
 					    match = match.replace(cal, (a+"").replace(".0", ""));
 					}
 				}
@@ -194,11 +204,12 @@ public class TrainRules {
 	}
 	private static String makeRule(ArrayList<String> antecedents) throws ScriptException {
 		String rule = "";
-		Pattern numPattern = Pattern.compile("\\d+");
+		Pattern numPattern = Pattern.compile("(\\+|-)*\\d+");
 		Pattern wordPattern = Pattern.compile("\\w+");
 		HashMap<String,String> vars = new HashMap<>();
 		int counter = 1, argCount = 1;
 		int[] numbers = new int[3];
+		System.out.println(antecedents);
 		for (String s : antecedents) {
 			Matcher m = numPattern.matcher(s);
 			while (m.find()) {
@@ -261,7 +272,9 @@ public class TrainRules {
 	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
 		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
 		ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(brandon,46+X),X).\nholdsAt(age(ronda,37+Y),Y).";
-		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", ans, pipeline);
+		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", ans, pipeline);
+		ans = "holdsAt(age(jason,20),0).\nholdsAt(age(mandy,15),0).\nholdsAt(age(jason,20+X),X).\nholdsAt(age(mandy,15+Y),Y).";
+		convertProblem("The sum of Jason and Mandy ages is 35. 10 years ago Jason was 2 times as old as Mandy. How old are they now?", ans, pipeline);
 	}
 
 }

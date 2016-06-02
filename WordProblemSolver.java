@@ -225,10 +225,10 @@ public class WordProblemSolver {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-	    //solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
-		//solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
-		//solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", pipeline);
-		//solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of Tim and Joann ages will be 79. How old are they now?",pipeline);
+	    solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
+		solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
+		solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", pipeline);
+		solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of their ages will be 79. How old are they now?",pipeline);
 		solveWordProblems("The sum of Jason and Mandy ages is 35. 10 years ago Jason was 2 times as old as Mandy. How old are they now?", pipeline);
 	}
 
