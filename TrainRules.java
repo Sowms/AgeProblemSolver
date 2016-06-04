@@ -55,6 +55,9 @@ public class TrainRules {
 	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		
 		problem = WordProblemSolver.coref(problem, pipeline);
+		problem = WordProblemSolver.convertNumberNames(problem, pipeline);
+		problem = WordProblemSolver.substitute(problem, pipeline);
+		problem = ConjunctionResolver.parse(problem, pipeline);
 		Annotation document = new Annotation(problem);
 		pipeline.annotate(document);
 		int[] times = new int[10];
@@ -83,6 +86,7 @@ public class TrainRules {
 	    			actors.add(token.originalText().toLowerCase());
 	    		}
 	    		else if (pos.contains("NNP")) {
+	    			System.out.println(token.originalText());
 	    			arguments.add(token.originalText().toLowerCase());
 	    			actors.add(token.originalText().toLowerCase());
 	    		}
@@ -136,7 +140,7 @@ public class TrainRules {
 	    		begin = "holdsAt";
 	    	String stmt = begin + "(" + predicate + "(";
 	    	//System.out.println(sentence.toString().contains("their") + "|" + actors);
-	    	if (sentence.toString().contains("their"))
+	    	if (sentence.toString().contains(" their "))
 	    		arguments.addAll(actors);
 	    	for (String s : arguments) {
 	    		stmt = stmt + s +",";

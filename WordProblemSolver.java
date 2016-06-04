@@ -110,6 +110,60 @@ public class WordProblemSolver {
         return problem;
 		
 	}
+	public static String substitute(String problem, StanfordCoreNLP pipeline) {
+		String newProblem = new String(problem);
+		if (newProblem.toLowerCase().contains(" double "))
+			newProblem = newProblem.replace(" double ", " 2 times ");
+		if (newProblem.toLowerCase().contains(" twice "))
+			newProblem = newProblem.replace(" twice ", " 2 times ");
+		if (newProblem.toLowerCase().contains(" thrice "))
+			newProblem = newProblem.replace(" thrice ", " 3 times ");
+		
+		return newProblem;
+	}
+	public static String convertNumberNames(String problem, StanfordCoreNLP pipeline) {
+		String newProblem = new String(problem);
+		Annotation document = new Annotation(problem);
+		pipeline.annotate(document);
+		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+		ArrayList<String> names = new ArrayList<>();
+    	ArrayList<String> numbers = new ArrayList<>();
+	    for (CoreMap sentence : sentences) {
+	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
+	    	String name = "";
+	    	boolean isNum = false;
+	    	for (CoreLabel token: tokens) {
+	    		String pos = token.tag();
+	    		if (pos.contains("CD")) {
+	    			if (!isNum) {
+	    				isNum = true;
+	    				name = "";
+	    			}
+	    			name = name + token.originalText() + " ";
+	    		}
+	    		else if (isNum) {
+	    			System.out.println(name);
+	    			names.add(name);
+	    			numbers.add(WolframTester.convert(name));
+	    			isNum = false;
+	    		}
+	    	}
+	    }
+	    System.out.println(numbers);
+	    System.out.println(names);
+	    int counter = 0;
+	    for (String name : names) {
+	    	name = name.trim();
+	    	newProblem = newProblem.replace(" "+name+" ", " "+numbers.get(counter)+" ");
+	    	newProblem = newProblem.replace("."+name+" ", "."+numbers.get(counter)+" ");
+	    	newProblem = newProblem.replace(" "+name+".", " "+numbers.get(counter)+".");
+	    	newProblem = newProblem.replace("."+name+" ", ","+numbers.get(counter)+" ");
+	    	newProblem = newProblem.replace(" "+name+",", " "+numbers.get(counter)+",");
+	    	counter++;
+	    }
+	    System.out.println(newProblem);
+	    return newProblem;
+	}
 	public static String convertInfix (String prefix) {
 		String[] stack = new String[100];
 		prefix = prefix.replaceAll(" ", "");
@@ -150,13 +204,13 @@ public class WordProblemSolver {
 		return stack[top].replaceAll("\\[", "(").replaceAll("\\]", ")");
 	}
 	public static String solveWordProblems(String problem, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
-		String corefProblem = coref(problem,pipeline);
-		// change number names to numbers
-		String conjFreeProblem = ConjunctionResolver.parse(corefProblem, pipeline);
-		System.out.println(conjFreeProblem);
-		String p = TrainRules.convertProblem(conjFreeProblem, "", pipeline);
+		//problem = coref(problem, pipeline);
+		//problem = ConjunctionResolver.parse(problem, pipeline);
+		//problem = substitute(problem, pipeline);
+		
+		String p = TrainRules.convertProblem(problem, "", pipeline);
 		System.out.println(p);
-		Annotation document = new Annotation(conjFreeProblem);
+		Annotation document = new Annotation(problem);
 		pipeline.annotate(document);
 		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 	    ArrayList<String> actors = new ArrayList<>();
@@ -219,17 +273,17 @@ public class WordProblemSolver {
 	    }	
 		pipeline.annotate(document);
 		
-		return conjFreeProblem;
+		return problem;
 	}
 	public static void main(String[] main) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-	    solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
-		solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
-		solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of Brandon and Ronda ages will be 91. How old are they now?", pipeline);
-		solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of their ages will be 79. How old are they now?",pipeline);
-		solveWordProblems("The sum of Jason and Mandy ages is 35. 10 years ago Jason was 2 times as old as Mandy. How old are they now?", pipeline);
+	    //solveWordProblems("A boy is 6 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", pipeline);
+		//solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
+		//solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", pipeline);
+		//solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of their ages will be 79. How old are they now?",pipeline);
+	    solveWordProblems("The sum of Jason and Mandy ages is 35. Ten years ago Jason was twice as old as Mandy. How old are they now?", pipeline);
 	}
 
 	        
