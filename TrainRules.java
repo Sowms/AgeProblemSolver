@@ -277,8 +277,8 @@ public class TrainRules {
 		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
 		ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(brandon,46+X),X).\nholdsAt(age(ronda,37+Y),Y).";
 		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", ans, pipeline);
-		ans = "holdsAt(age(jason,20),0).\nholdsAt(age(mandy,15),0).\nholdsAt(age(jason,20+X),X).\nholdsAt(age(mandy,15+Y),Y).";
-		convertProblem("The sum of Jason and Mandy ages is 35. 10 years ago Jason was 2 times as old as Mandy. How old are they now?", ans, pipeline);
+		ans = "holdsAt(age(pat,38),0).\nholdsAt(age(james,18),0).\nholdsAt(age(pat,38+X),X).\nholdsAt(age(james,18+Y),Y).";
+		convertProblem("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", ans, pipeline);
 	}
 
 }

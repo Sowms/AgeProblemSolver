@@ -283,7 +283,13 @@ public class WordProblemSolver {
 		//solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be 2 times as old as his son. Find the present age of each.", pipeline);
 		//solveWordProblems("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", pipeline);
 		//solveWordProblems("Tim is 5 years older than JoAnn. 6 years from now the sum of their ages will be 79. How old are they now?",pipeline);
-	    solveWordProblems("The sum of Jason and Mandy ages is 35. Ten years ago Jason was twice as old as Mandy. How old are they now?", pipeline);
+	    //solveWordProblems("The sum of Jason and Mandy ages is 35. Ten years ago Jason was twice as old as Mandy. How old are they now?", pipeline);
+	    //solveWordProblems("Carmen is 12 years older than David. Five years ago the sum of their ages was 28. How old are they now?",pipeline);
+	    //solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be twice as old as his son. Find the present age of each.",pipeline);
+	    solveWordProblems("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", pipeline);
+	    solveWordProblems("Diane is 23 years older than her daughter Amy. In 6 years Diane will be twice as old as Amy. How old are they now?", pipeline);
+	    //solveWordProblems("The sum of the ages of a father and son is 56. Four years ago the father was 3 times as old as the son. Find the present age of each.", pipeline);
+	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find their present ages.", pipeline);
 	}
 
 	        
