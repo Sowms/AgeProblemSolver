@@ -28,6 +28,8 @@ import edu.stanford.nlp.util.CoreMap;
 
 public class TrainRules {
 	
+	public static ArrayList<String> actors = new ArrayList<>();
+    
 	public static String findRelation(int a, int b, int c) throws ScriptException {
 		String ans = "";
 		int[] numbers = new int[3];
@@ -53,7 +55,7 @@ public class TrainRules {
 		return ans;
 	}
 	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
-		
+		actors = new ArrayList<>();
 		problem = WordProblemSolver.coref(problem, pipeline);
 		problem = WordProblemSolver.convertNumberNames(problem, pipeline);
 		problem = WordProblemSolver.substitute(problem, pipeline);
@@ -68,12 +70,13 @@ public class TrainRules {
 		boolean eventFlag = false;
 	    List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 	    String program = "";
-	    ArrayList<String> actors = new ArrayList<>();
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	boolean quesFlag = false;
 	    	ArrayList<String> arguments = new ArrayList<>();
 	    	String predicate = "";
+	    	String adj = "";
+    		
 	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
@@ -81,9 +84,21 @@ public class TrainRules {
 	    			break;
 	    		}
 	    		WordNetInterface.seen = new ArrayList<>();
+	    		if (!pos.contains("NN") && !adj.isEmpty()) 
+	    			adj = "";
 	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
-	    			arguments.add(token.originalText().toLowerCase());
-	    			actors.add(token.originalText().toLowerCase());
+	    			String arg = "";
+	    			if (!adj.isEmpty()) {
+	    				arg = adj+token.originalText().toLowerCase();
+	    				predicate = predicate.replace(adj, "");
+		    			adj = adj.toUpperCase().substring(0, 1) + adj.substring(1);
+		    			predicate = predicate.replace(adj, "");
+		    			adj = "";
+	    			}
+	    			else
+	    				arg = token.originalText().toLowerCase();
+	    			arguments.add(arg);
+	    			actors.add(arg);
 	    		}
 	    		else if (pos.contains("NNP")) {
 	    			System.out.println(token.originalText());
@@ -128,6 +143,8 @@ public class TrainRules {
 	    				}
 	    				else if (predicate.isEmpty() && !token.originalText().contains("year")) 
 	    					predicate = predicate + token.originalText();
+	    				if (pos.contains("NN"))
+	    					adj = token.originalText();
 	    			}
 	    		}
 	    	}
@@ -140,8 +157,11 @@ public class TrainRules {
 	    		begin = "holdsAt";
 	    	String stmt = begin + "(" + predicate + "(";
 	    	//System.out.println(sentence.toString().contains("their") + "|" + actors);
+	    	ArrayList<String> temp = new ArrayList<>();
 	    	if (sentence.toString().contains(" their "))
-	    		arguments.addAll(actors);
+	    		temp.addAll(actors);
+	    	temp.addAll(arguments);
+	    	arguments = temp;
 	    	for (String s : arguments) {
 	    		stmt = stmt + s +",";
 	    	}
@@ -235,19 +255,28 @@ public class TrainRules {
 				}
 			}
 		}
-		//System.out.println(vars);
+		System.out.println(vars);
 		String expr = findRelation(numbers[0],numbers[1],numbers[2]);
 		for (String s: antecedents) {
 			String newAntecedent = new String(s);
 			Matcher m = numPattern.matcher(s);
 			while (m.find()) {
 				String num = m.group();
-				if (newAntecedent.contains(num))
-					newAntecedent = newAntecedent.replace(num, vars.get(num));
+				//System.out.println("k"+newAntecedent);
+				if (newAntecedent.contains(" "+num+",") || newAntecedent.contains("("+num+" ,")) {
+					newAntecedent = newAntecedent.replace(" "+num+",", " " + vars.get(num) + ",");
+					newAntecedent = newAntecedent.replace("("+num+" ,", "(" + vars.get(num)+ ",");
+				}
+				if (newAntecedent.contains(" "+num+")"))
+						newAntecedent = newAntecedent.replace(" "+num+")", " " + vars.get(num) + ")");
+				//System.out.println("k"+newAntecedent);
 			}
 			m = wordPattern.matcher(s);
 			while (m.find()) {
 				String arg = m.group();
+				//System.out.println("a" + arg);
+				if (numPattern.matcher(arg).find())
+					continue;
 				if (newAntecedent.contains(arg) && vars.containsKey(arg))
 					newAntecedent = newAntecedent.replace(arg, vars.get(arg));
 			}
@@ -279,6 +308,8 @@ public class TrainRules {
 		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", ans, pipeline);
 		ans = "holdsAt(age(pat,38),0).\nholdsAt(age(james,18),0).\nholdsAt(age(pat,38+X),X).\nholdsAt(age(james,18+Y),Y).";
 		convertProblem("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", ans, pipeline);
+		ans = "holdsAt(age(chinaplate,10),0).\nholdsAt(age(glassplate,6),0).\nholdsAt(age(chinaplate,10+X),X).\nholdsAt(age(glassplate,6+Y),Y).";
+		convertProblem("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", ans, pipeline);
 	}
 
 }

@@ -213,25 +213,22 @@ public class WordProblemSolver {
 		Annotation document = new Annotation(problem);
 		pipeline.annotate(document);
 		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
-	    ArrayList<String> actors = new ArrayList<>();
+	    ArrayList<String> actors = TrainRules.actors;
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
 	    		WordNetInterface.seen = new ArrayList<>();
-	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
-	    			if (!actors.contains(token.originalText().toLowerCase()))
-	    				actors.add(token.originalText().toLowerCase());
-	    		}
-	    		if (pos.contains("NNP"))
-	    				if (!actors.contains(token.originalText().toLowerCase()))
-		    				actors.add(token.originalText().toLowerCase());
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
 	    				int counter = 0; char base = 'x', varBase = 'X';
+	    				ArrayList<String> temp = new ArrayList<String>();
 	    				for (String actor : actors) {
+	    					if (temp.contains(actor))
+	    						continue;
 	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"+"+(char)(varBase+counter)+"),"+(char)(varBase+counter)+").\n" + p;
 	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"),0).\n" + p;
+	    					temp.add(actor);
 	    					counter++;
 	    				}
 	    				FileWriter fw = new FileWriter(new File("problem.pl"));
@@ -286,10 +283,13 @@ public class WordProblemSolver {
 	    //solveWordProblems("The sum of Jason and Mandy ages is 35. Ten years ago Jason was twice as old as Mandy. How old are they now?", pipeline);
 	    //solveWordProblems("Carmen is 12 years older than David. Five years ago the sum of their ages was 28. How old are they now?",pipeline);
 	    //solveWordProblems("A father is 4 times as old as his son. In 20 years the father will be twice as old as his son. Find the present age of each.",pipeline);
-	    solveWordProblems("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", pipeline);
-	    solveWordProblems("Diane is 23 years older than her daughter Amy. In 6 years Diane will be twice as old as Amy. How old are they now?", pipeline);
+	    //solveWordProblems("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", pipeline);
+	    //solveWordProblems("Diane is 23 years older than her daughter Amy. In 6 years Diane will be twice as old as Amy. How old are they now?", pipeline);
 	    //solveWordProblems("The sum of the ages of a father and son is 56. Four years ago the father was 3 times as old as the son. Find the present age of each.", pipeline);
 	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find their present ages.", pipeline);
+	    //solveWordProblems("Fred is 4 years older than Barney. Five years ago the sum of their ages was 48. How old are they now?", pipeline);
+	    //solveWordProblems("John is four times as old as Martha. Five years ago the sum of their ages was 50. How old are they now?", pipeline);
+	    solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", pipeline);
 	}
 
 	        
