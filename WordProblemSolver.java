@@ -124,6 +124,8 @@ public class WordProblemSolver {
 			newProblem = newProblem.replace(" half ", " 0.5 times ");
 		if (newProblem.toLowerCase().contains(" one-half "))
 			newProblem = newProblem.replace(" one-half ", " 0.5 times ");
+		if (newProblem.toLowerCase().contains("'s"))
+			newProblem = newProblem.replace("'s", " ");
 		return newProblem;
 	}
 	public static String convertNumberNames(String problem, StanfordCoreNLP pipeline) {
@@ -281,8 +283,14 @@ public class WordProblemSolver {
 							counter++;
 						}
 					}
-					else if (numMatcher.find())
-						System.out.println(numMatcher.group() + " years");
+					else if (numMatcher.find()) {
+						String a = "";
+						a = numMatcher.group() + " years";
+						if (ans.contains("-"))
+							System.out.print(a + " ago");
+						else
+							System.out.print("In " + a);
+					}
 	    		}
 	    	}
 	    }	
@@ -309,7 +317,17 @@ public class WordProblemSolver {
 	    //solveWordProblems("John is four times as old as Martha. Five years ago the sum of their ages was 50. How old are they now?", pipeline);
 	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", pipeline);
 	    //solveWordProblems("The sum of the ages of a wood plaque and a bronze plaque is 20 years. Four years ago, the bronze plaque was one-half the age of the wood plaque. Find the present age of each plaque.", pipeline);
-	    solveWordProblems("Angel is now 34 years old, and Betty is 4 years old. In how many years will Angel be twice as old as Betty?", pipeline);
+	    //solveWordProblems("Angel is now 34 years old, and Betty is 4 years old. In how many years will Angel be twice as old as Betty?", pipeline);
+	    //solveWordProblems("A log cabin quilt is 24 years old and a friendship quilt is 6 years old. In how many years will the log cabin quilt be three times as old as the friendship quilt?", pipeline);
+	    ////solveWordProblems("The age of the older of two boys is twice that of the younger. 5 years ago it was three times that of the younger. Find the age of each.", pipeline);
+	    //solveWordProblems("A pitcher is 30 years old, and a vase is 22 years old. How many years ago was the pitcher twice as old as the vase?", pipeline);
+	    //solveWordProblems("Marge is twice as old as Consuelo. The sum of their ages seven years ago was 13. How old are they now?", pipeline);
+	    //solveWordProblems("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", pipeline);
+	    ////solveWordProblems("A silver coin is 28 years older than a bronze coin. In 6 years, the silver coin will be twice as old as the bronze coin. Find the present age of each coin.", pipeline);
+	    //solveWordProblems("A sofa is 12 years old and a table is 36 years old. In how many years will the table be twice as old as the sofa?", pipeline);
+	    solveWordProblems("A limestone statue is 56 years older than a marble statue. In 12 years, the limestone statue will be three times as old as the marble statue. Find the present age of the statues.", pipeline);
+
+
 
 	}
 

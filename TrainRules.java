@@ -75,7 +75,7 @@ public class TrainRules {
 		int count = 0;
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
-	    	boolean quesFlag = false;
+	    	boolean quesFlag = false, adjFlag = false;
 	    	ArrayList<String> arguments = new ArrayList<>();
 	    	String predicate = "";
 	    	String adj = "";
@@ -86,20 +86,36 @@ public class TrainRules {
 	    			break;
 	    		}
 	    		WordNetInterface.seen = new ArrayList<>();
-	    		if (!pos.contains("NN") && !adj.isEmpty()) 
+	    		if (!pos.contains("NN") && !adj.isEmpty() && !adjFlag) 
 	    			adj = "";
+	    		else if (!pos.contains("NN") && !adj.isEmpty() && adjFlag) {
+	    			String arg = adj;
+	    			if (!arguments.contains(arg)) {
+	    				arguments.add(arg);
+	    				actors.add(arg);
+	    			}
+	    			adj = "";
+	    			adjFlag = false;
+	    		}
+	    			
 	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			String arg = "";
 	    			if (!adj.isEmpty()) {
-	    				arg = adj+token.originalText().toLowerCase();
+	    				adjFlag = true;
+	    				String replace = new String(adj);
+	    				adj = adj+token.originalText().toLowerCase();
 	    				predicate = predicate.replace(adj, "");
-		    			adj = adj.toUpperCase().substring(0, 1) + adj.substring(1);
-		    			predicate = predicate.replace(adj, "");
-		    			adj = "";
+	    				predicate = predicate.replace(replace, "");
+	    				replace = replace.toUpperCase().substring(0, 1) + replace.substring(1);
+	    				predicate = predicate.replace(replace, "");
+		    			replace = adj.toUpperCase().substring(0, 1) + adj.substring(1);
+		    			predicate = predicate.replace(replace, "");
+		    			replace = token.originalText().toLowerCase().toUpperCase().substring(0, 1) + token.originalText().toLowerCase().substring(1);
+		    			predicate = predicate.replace(replace, "");
 	    			}
 	    			else
 	    				arg = token.originalText().toLowerCase();
-	    			if (!arguments.contains(arg)) {
+	    			if (!arg.isEmpty() && !arguments.contains(arg)) {
 	    				arguments.add(arg);
 	    				actors.add(arg);
 	    			}
@@ -146,7 +162,7 @@ public class TrainRules {
 	    				}
 	    				else if (predicate.isEmpty() && !token.originalText().contains("year")) 
 	    					predicate = predicate + token.originalText();
-	    				if (pos.contains("NN"))
+	    				if (pos.contains("NN") || pos.contains("JJ"))
 	    					adj = token.originalText();
 	    			}
 	    		}
@@ -322,6 +338,8 @@ public class TrainRules {
 		convertProblem("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", ans, pipeline);
 		ans = "holdsAt(age(chinaplate,10),0).\nholdsAt(age(glassplate,6),0).\nholdsAt(age(chinaplate,10+X),X).\nholdsAt(age(glassplate,6+Y),Y).";
 		convertProblem("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", ans, pipeline);
+		ans = "holdsAt(age(jason,20),0).\nholdsAt(age(mandy,15),0).\nholdsAt(age(jason,20+X),X).\nholdsAt(age(mandy,15+Y),Y).";
+		convertProblem("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", ans, pipeline);
 	}
 
 }
