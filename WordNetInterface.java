@@ -64,14 +64,16 @@ public class WordNetInterface {
         // look up first sense of the word "dog "
         ArrayList<String> supersenses = new ArrayList<String>();
         IIndexWord idxWord = dict.getIndexWord (current, POS.NOUN);
+        if (idxWord == null)
+        	return false;
         for (IWordID wordID : idxWord.getWordIDs()) {
         	IWord word = dict.getWord (wordID);         
             ISynset synset = word.getSynset();
             String LexFileName = synset.getLexicalFile().getName();
-            //System.out.println("Lexical Name : "+ LexFileName);
+            System.out.println("Lexical Name : "+ LexFileName);
             if (LexFileName.contains("person"))
             	return true;
-            if (LexFileName.contains("cognition"))
+            if (LexFileName.contains("cognition") || LexFileName.contains("substance"))
             	return false;
             supersenses.add(LexFileName);
         }
@@ -103,5 +105,9 @@ public class WordNetInterface {
 		System.out.println(isActor("coin"));
 		seen = new ArrayList<>();
 		System.out.println(isActor("times"));
+		seen = new ArrayList<>();
+		System.out.println(isActor("marble"));
+		seen = new ArrayList<>();
+		System.out.println(isActor("silver"));
 	}
 }

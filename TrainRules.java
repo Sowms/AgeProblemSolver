@@ -97,8 +97,11 @@ public class TrainRules {
 	    			adj = "";
 	    			adjFlag = false;
 	    		}
-	    			
-	    		if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
+	    		if (pos.contains("NNP")) {
+	    			arguments.add(token.originalText().toLowerCase());
+	    			actors.add(token.originalText().toLowerCase());
+	    		}	
+	    		else if (pos.contains("NN") && WordNetInterface.isActor(token.originalText().toLowerCase())) {
 	    			String arg = "";
 	    			if (!adj.isEmpty()) {
 	    				adjFlag = true;
@@ -119,10 +122,6 @@ public class TrainRules {
 	    				arguments.add(arg);
 	    				actors.add(arg);
 	    			}
-	    		}
-	    		else if (pos.contains("NNP")) {
-	    			arguments.add(token.originalText().toLowerCase());
-	    			actors.add(token.originalText().toLowerCase());
 	    		}
 	    		else if (pos.contains("CD")) {
 	    			//is it timer?
@@ -340,6 +339,9 @@ public class TrainRules {
 		convertProblem("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", ans, pipeline);
 		ans = "holdsAt(age(jason,20),0).\nholdsAt(age(mandy,15),0).\nholdsAt(age(jason,20+X),X).\nholdsAt(age(mandy,15+Y),Y).";
 		convertProblem("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", ans, pipeline);
+		ans = "holdsAt(age(father,45),0).\nholdsAt(age(daughter,12),0).\nholdsAt(age(father,45+X),X).\nholdsAt(age(daughter,12+Y),Y).";
+		convertProblem("A daughter is 33 years younger than the father. If the sum of their ages 3 years ago was 51 years, find the present age of the father.", ans, pipeline);
+
 	}
 
 }

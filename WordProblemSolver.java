@@ -325,7 +325,11 @@ public class WordProblemSolver {
 	    //solveWordProblems("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", pipeline);
 	    ////solveWordProblems("A silver coin is 28 years older than a bronze coin. In 6 years, the silver coin will be twice as old as the bronze coin. Find the present age of each coin.", pipeline);
 	    //solveWordProblems("A sofa is 12 years old and a table is 36 years old. In how many years will the table be twice as old as the sofa?", pipeline);
-	    solveWordProblems("A limestone statue is 56 years older than a marble statue. In 12 years, the limestone statue will be three times as old as the marble statue. Find the present age of the statues.", pipeline);
+	    ////solveWordProblems("A limestone statue is 56 years older than a marble statue. In 12 years, the limestone will be three times as old as the marble statue. Find the present age of the statues.", pipeline);
+	    //solveWordProblems("A pewter bowl is 8 years old, and a silver bowl is 22 years old. In how many years will the silver bowl be twice the age of the pewter bowl?", pipeline);
+	    //solveWordProblems("A kerosene lamp is 95 years old, and an electric lamp is 55 years old. How many years ago was the kerosene lamp twice the age of the electric lamp?", pipeline);
+	    solveWordProblems("Ruth is 10 years old. She is 3 years younger than Sam. How old is Sam now?", pipeline);
+
 
 
 
