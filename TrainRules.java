@@ -57,6 +57,7 @@ public class TrainRules {
 	public static String convertProblem(String problem, String ans, StanfordCoreNLP pipeline) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		actors = new ArrayList<>();
 		problem = WordProblemSolver.coref(problem, pipeline);
+		System.out.println(problem);
 		problem = WordProblemSolver.convertNumberNames(problem, pipeline);
 		problem = WordProblemSolver.substitute(problem, pipeline);
 		problem = ConjunctionResolver.parse(problem, pipeline);
@@ -70,14 +71,15 @@ public class TrainRules {
 		boolean eventFlag = false;
 	    List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 	    String program = "";
+		char base = 'X';
+		int count = 0;
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	boolean quesFlag = false;
 	    	ArrayList<String> arguments = new ArrayList<>();
 	    	String predicate = "";
 	    	String adj = "";
-    		
-	    	for (CoreLabel token: tokens) {
+    		for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			quesFlag = true;
@@ -97,11 +99,12 @@ public class TrainRules {
 	    			}
 	    			else
 	    				arg = token.originalText().toLowerCase();
-	    			arguments.add(arg);
-	    			actors.add(arg);
+	    			if (!arguments.contains(arg)) {
+	    				arguments.add(arg);
+	    				actors.add(arg);
+	    			}
 	    		}
 	    		else if (pos.contains("NNP")) {
-	    			System.out.println(token.originalText());
 	    			arguments.add(token.originalText().toLowerCase());
 	    			actors.add(token.originalText().toLowerCase());
 	    		}
@@ -155,6 +158,8 @@ public class TrainRules {
 	    		begin = "happensAt";
 	    	else
 	    		begin = "holdsAt";
+	    	if (predicate.equals("old"))
+	    		predicate = "age";
 	    	String stmt = begin + "(" + predicate + "(";
 	    	//System.out.println(sentence.toString().contains("their") + "|" + actors);
 	    	ArrayList<String> temp = new ArrayList<>();
@@ -172,6 +177,13 @@ public class TrainRules {
 	    	stmt = stmt.replaceAll(",\\)", ")");
 	    	System.out.println(stmt);
 	    	program = program+stmt+"\n";
+	    	if (predicate.equals("age") && timer == 0) {
+	    		char change = (char) (base+count);
+	    		stmt = stmt.replace("),0)", "+"+change+"),"+change+")");
+	    		count++;
+	    		program = program+stmt+"\n";
+	    	}
+		    	
 	    }
 	    program = ans+"\n"+program;
 	    if (!ans.isEmpty())

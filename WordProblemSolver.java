@@ -63,7 +63,7 @@ public class WordProblemSolver {
                 if(clust.equals(clust2))
                     continue;
                 ////System.out.println("\t" + clust2 + tks.get(m.startIndex-1).get(PartOfSpeechAnnotation.class));
-                if (tks.get(m.startIndex-1).get(PartOfSpeechAnnotation.class).startsWith("P") || clust2.toLowerCase().contains("the")) {
+                if (tks.get(m.startIndex-1).get(PartOfSpeechAnnotation.class).startsWith("P") /*|| clust2.toLowerCase().contains("the")*/) {
                 	if (clust.contains("his ") || clust.contains("her ") || clust.contains("His ") || clust.contains("Her ") || clust.toLowerCase().equals("she") || clust.toLowerCase().equals("he")) {
                 		////System.out.println("check!"+clust);
                 		if (!coref.isEmpty()) {
@@ -118,7 +118,12 @@ public class WordProblemSolver {
 			newProblem = newProblem.replace(" twice ", " 2 times ");
 		if (newProblem.toLowerCase().contains(" thrice "))
 			newProblem = newProblem.replace(" thrice ", " 3 times ");
-		
+		if (newProblem.toLowerCase().contains(" one half "))
+			newProblem = newProblem.replace(" one half ", " 0.5 times ");
+		if (newProblem.toLowerCase().contains(" half "))
+			newProblem = newProblem.replace(" half ", " 0.5 times ");
+		if (newProblem.toLowerCase().contains(" one-half "))
+			newProblem = newProblem.replace(" one-half ", " 0.5 times ");
 		return newProblem;
 	}
 	public static String convertNumberNames(String problem, StanfordCoreNLP pipeline) {
@@ -220,7 +225,9 @@ public class WordProblemSolver {
 	    		String pos = token.tag();
 	    		WordNetInterface.seen = new ArrayList<>();
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
+	    			boolean actorFlag = false;
 	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
+	    				actorFlag = true;
 	    				int counter = 0; char base = 'x', varBase = 'X';
 	    				ArrayList<String> temp = new ArrayList<String>();
 	    				for (String actor : actors) {
@@ -231,41 +238,52 @@ public class WordProblemSolver {
 	    					temp.add(actor);
 	    					counter++;
 	    				}
-	    				FileWriter fw = new FileWriter(new File("problem.pl"));
-	    				FileReader fr = new FileReader(new File("rules.pl"));
-	    				BufferedReader br = new BufferedReader(fr);
-	    				String rules = "";
-	    				String s;
-						while ((s = br.readLine()) != null)
-	    					rules = rules + s + "\n";
-						br.close();
-	    				BufferedWriter bw = new BufferedWriter(fw);
-	    		    	bw.write(p);
-	    		    	bw.write(rules);
-	    		    	bw.close();
-	    		    	Query q1 = new Query("consult('problem.pl')");
-	    		    	System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
-	    		    	Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
-	    		    	String equations = "";
-	    	    		while (q4.hasMoreSolutions()) {
-	    	    			String match1 = q4.nextSolution().get("X").toString();
-	    	    			String match2 = q4.nextSolution().get("Y").toString();
-	    	    			//System.out.println(match1+"="+match2);
-	    	    			equations = convertInfix(new String(match1))+"="+match2 +", "+equations;
-	    	    			
-	    	    		}
-	    	    		equations = equations.substring(0,equations.length()-2);
-	    	    		String ans = WolframTester.solveProblem(equations);
-	    	    		Pattern numPattern = Pattern.compile("\\d+");
-						Matcher numMatcher = numPattern.matcher(ans);
-						counter = 0;
+	    			}
+	    			if (sentence.toString().toLowerCase().contains("how many")) {
+	    				String p1;
+	    				if (problem.contains("how"))
+	    					p1 = TrainRules.convertProblem(sentence.toString().replace("how many", ""), "", pipeline);
+	    				else
+	    					p1 = TrainRules.convertProblem(sentence.toString().replace("How many", ""), "", pipeline);
+	    				p1 = p1.replace(",0)",",k)");
+	    				p = p1 + "\n" + p;
+	    			}
+	    			FileWriter fw = new FileWriter(new File("problem.pl"));
+	    			FileReader fr = new FileReader(new File("rules.pl"));
+	    			BufferedReader br = new BufferedReader(fr);
+	    			String rules = "";
+	    			String s;
+					while ((s = br.readLine()) != null)
+	    				rules = rules + s + "\n";
+					br.close();
+	    			BufferedWriter bw = new BufferedWriter(fw);
+	    		    bw.write(p);
+	    		    bw.write(rules);
+	    		    bw.close();
+	    		    Query q1 = new Query("consult('problem.pl')");
+	    		    System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
+	    		    Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
+	    		    String equations = "";
+	    	    	while (q4.hasMoreSolutions()) {
+	    	    		String match1 = q4.nextSolution().get("X").toString();
+	    	    		String match2 = q4.nextSolution().get("Y").toString();
+	    	    		System.out.println(match1+"="+match2);
+	    	    		equations = convertInfix(new String(match1))+"="+match2 +", "+equations;
+	    	    	}
+	    	    	equations = equations.substring(0,equations.length()-2);
+	    	    	String ans = WolframTester.solveProblem(equations);
+	    	    	Pattern numPattern = Pattern.compile("\\d+");
+					Matcher numMatcher = numPattern.matcher(ans);
+					int counter = 0;
+					if (actorFlag) {
 						while (numMatcher.find()) {
 							System.out.println("Age of " + actors.get(counter) + " = " + numMatcher.group() + " years");
 							counter++;
 						}
-	    			}
+					}
+					else
+						System.out.println(numMatcher.group() + " years");
 	    		}
-	    		
 	    	}
 	    }	
 		pipeline.annotate(document);
@@ -289,7 +307,10 @@ public class WordProblemSolver {
 	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find their present ages.", pipeline);
 	    //solveWordProblems("Fred is 4 years older than Barney. Five years ago the sum of their ages was 48. How old are they now?", pipeline);
 	    //solveWordProblems("John is four times as old as Martha. Five years ago the sum of their ages was 50. How old are they now?", pipeline);
-	    solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", pipeline);
+	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", pipeline);
+	    //solveWordProblems("The sum of the ages of a wood plaque and a bronze plaque is 20 years. Four years ago, the bronze plaque was one-half the age of the wood plaque. Find the present age of each plaque.", pipeline);
+	    solveWordProblems("Angel is now 34 years old, and Betty is 4 years old. In how many years will Angel be twice as old as Betty?", pipeline);
+
 	}
 
 	        
