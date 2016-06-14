@@ -281,7 +281,7 @@ public class WordProblemSolver {
 							counter++;
 						}
 					}
-					else
+					else if (numMatcher.find())
 						System.out.println(numMatcher.group() + " years");
 	    		}
 	    	}
