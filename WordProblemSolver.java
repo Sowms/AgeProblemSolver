@@ -151,7 +151,7 @@ public class WordProblemSolver {
 	    		else if (isNum) {
 	    			System.out.println(name);
 	    			names.add(name);
-	    			numbers.add(WolframTester.convert(name));
+	    			numbers.add(Word2Num.convert(name));
 	    			isNum = false;
 	    		}
 	    	}
@@ -221,6 +221,7 @@ public class WordProblemSolver {
 		pipeline.annotate(document);
 		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 	    ArrayList<String> actors = TrainRules.actors;
+	    System.out.println(actors);
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	for (CoreLabel token: tokens) {
@@ -228,19 +229,6 @@ public class WordProblemSolver {
 	    		WordNetInterface.seen = new ArrayList<>();
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			boolean actorFlag = false;
-	    			if (sentence.toString().contains("now") || sentence.toString().contains("present")) {
-	    				actorFlag = true;
-	    				int counter = 0; char base = 'x', varBase = 'X';
-	    				ArrayList<String> temp = new ArrayList<String>();
-	    				for (String actor : actors) {
-	    					if (temp.contains(actor))
-	    						continue;
-	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"+"+(char)(varBase+counter)+"),"+(char)(varBase+counter)+").\n" + p;
-	    					p = "holdsAt(age("+actor+","+(char)(base+counter)+"),0).\n" + p;
-	    					temp.add(actor);
-	    					counter++;
-	    				}
-	    			}
 	    			if (sentence.toString().toLowerCase().contains("how many")) {
 	    				String p1;
 	    				if (problem.contains("how"))
@@ -249,6 +237,20 @@ public class WordProblemSolver {
 	    					p1 = TrainRules.convertProblem(sentence.toString().replace("How many", ""), "", pipeline);
 	    				p1 = p1.replace(",0)",",k)");
 	    				p = p1 + "\n" + p;
+	    				
+	    			} 
+	    			else {
+	    				actorFlag = true;
+		    			int counter = 0; char base = 'x', varBase = 'A';
+		    			ArrayList<String> temp = new ArrayList<String>();
+		    			for (String actor : actors) {
+		    				if (temp.contains(actor))
+		    					continue;
+		    				p = "holdsAt(age("+actor+","+(char)(base+counter)+"+"+(char)(varBase+counter)+"),"+(char)(varBase+counter)+").\n" + p;
+		    				p = "holdsAt(age("+actor+","+(char)(base+counter)+"),0).\n" + p;
+		    				temp.add(actor);
+		    				counter++;
+		    			}
 	    			}
 	    			FileWriter fw = new FileWriter(new File("problem.pl"));
 	    			FileReader fr = new FileReader(new File("rules.pl"));
@@ -258,45 +260,77 @@ public class WordProblemSolver {
 					while ((s = br.readLine()) != null)
 	    				rules = rules + s + "\n";
 					br.close();
+					p = p + rules;
 	    			BufferedWriter bw = new BufferedWriter(fw);
 	    		    bw.write(p);
-	    		    bw.write(rules);
 	    		    bw.close();
+	    		    fw.close();
 	    		    Query q1 = new Query("consult('problem.pl')");
 	    		    System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
+	    		    //Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
 	    		    Query q4 = new Query(new Compound("equation", new Term[] {new Variable("X"), new Variable("Y")}));
 	    		    String equations = "";
+	    		    ArrayList<String> candidates = new ArrayList<>();
 	    	    	while (q4.hasMoreSolutions()) {
 	    	    		String match1 = q4.nextSolution().get("X").toString();
 	    	    		String match2 = q4.nextSolution().get("Y").toString();
-	    	    		System.out.println(match1+"="+match2);
-	    	    		equations = convertInfix(new String(match1))+"="+match2 +", "+equations;
+	    	    		//System.out.println(match1+"="+match2);
+	    	    		String equation = convertInfix(new String(match1))+"="+match2 +", ";
+	    	    		//if (!equation.contains("+0"))
+	    	    		equation = equation.replaceAll("\\+-", "-");
+	    	    		equation = equation.replaceAll("\\+0", "");
+	    	    		if (!candidates.contains(equation)) {
+	    	    			candidates.add(equation);
+	    	    			equations = equation + equations;
+	    	    		}
 	    	    	}
-	    	    	equations = equations.substring(0,equations.length()-2);
+	    	    	if (!equations.isEmpty())
+	    	    		equations = equations.substring(0,equations.length()-2);
+	    	    	else {
+	    	    		String p1 = "";
+	    	    		p1 = TrainRules.convertProblem(sentence.toString().replace("What", "").replace("How many", ""), "", pipeline);
+	    	    		if (p1.charAt(0) == '\n')
+	    	    			p1 = p1.substring(1);
+	    	    		System.out.println("a"+p1+"a");
+	    	    		p1 = p1.split("\n")[0];
+	    	    		p1 = p1.replace(",0)",",K)");
+	    	    		System.out.println(p1);
+	    	    		q1 = new Query("consult('problem.pl')");
+		    		    System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
+		    		    
+	    	    		q4 = new Query(p1);
+	    	    		while (q4.hasMoreSolutions()) {
+	    	    			System.out.println(q4.nextSolution());
+	    	    		}
+	    	    		return "";
+	    	    	}
+	    	    	System.out.println(equations);
 	    	    	String ans = WolframTester.solveProblem(equations);
 	    	    	Pattern numPattern = Pattern.compile("\\d+");
 					Matcher numMatcher = numPattern.matcher(ans);
+					String a = "";
 					int counter = 0;
 					if (actorFlag) {
 						while (numMatcher.find()) {
-							System.out.println("Age of " + actors.get(counter) + " = " + numMatcher.group() + " years");
+							String val = numMatcher.group();
+							System.out.println("Age of " + actors.get(counter) + " = " + val + " years");
+							a = val + " ";
 							counter++;
 						}
 					}
 					else if (numMatcher.find()) {
-						String a = "";
-						a = numMatcher.group() + " years";
+						a = numMatcher.group();
 						if (ans.contains("-"))
-							System.out.print(a + " ago");
+							System.out.print(a + " years ago");
 						else
-							System.out.print("In " + a);
+							System.out.print("In " + a + " years");
 					}
+					return a;
 	    		}
 	    	}
 	    }	
-		pipeline.annotate(document);
 		
-		return problem;
+		return "";
 	}
 	public static void main(String[] main) throws IOException, ScriptException, NumberFormatException, InterruptedException {
 		Properties props = new Properties();
@@ -312,7 +346,7 @@ public class WordProblemSolver {
 	    //solveWordProblems("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", pipeline);
 	    //solveWordProblems("Diane is 23 years older than her daughter Amy. In 6 years Diane will be twice as old as Amy. How old are they now?", pipeline);
 	    //solveWordProblems("The sum of the ages of a father and son is 56. Four years ago the father was 3 times as old as the son. Find the present age of each.", pipeline);
-	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find their present ages.", pipeline);
+	    ////solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find their present ages.", pipeline);
 	    //solveWordProblems("Fred is 4 years older than Barney. Five years ago the sum of their ages was 48. How old are they now?", pipeline);
 	    //solveWordProblems("John is four times as old as Martha. Five years ago the sum of their ages was 50. How old are they now?", pipeline);
 	    //solveWordProblems("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", pipeline);
@@ -320,19 +354,23 @@ public class WordProblemSolver {
 	    //solveWordProblems("Angel is now 34 years old, and Betty is 4 years old. In how many years will Angel be twice as old as Betty?", pipeline);
 	    //solveWordProblems("A log cabin quilt is 24 years old and a friendship quilt is 6 years old. In how many years will the log cabin quilt be three times as old as the friendship quilt?", pipeline);
 	    ////solveWordProblems("The age of the older of two boys is twice that of the younger. 5 years ago it was three times that of the younger. Find the age of each.", pipeline);
-	    //solveWordProblems("A pitcher is 30 years old, and a vase is 22 years old. How many years ago was the pitcher twice as old as the vase?", pipeline);
-	    //solveWordProblems("Marge is twice as old as Consuelo. The sum of their ages seven years ago was 13. How old are they now?", pipeline);
+	    ////solveWordProblems("A pitcher is 30 years old, and a vase is 22 years old. How many years ago was the pitcher twice as old as the vase?", pipeline);
+	    solveWordProblems("Marge is twice as old as Consuelo. The sum of their ages seven years ago was 13. How old are they now?", pipeline);
 	    //solveWordProblems("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", pipeline);
 	    ////solveWordProblems("A silver coin is 28 years older than a bronze coin. In 6 years, the silver coin will be twice as old as the bronze coin. Find the present age of each coin.", pipeline);
 	    //solveWordProblems("A sofa is 12 years old and a table is 36 years old. In how many years will the table be twice as old as the sofa?", pipeline);
 	    ////solveWordProblems("A limestone statue is 56 years older than a marble statue. In 12 years, the limestone will be three times as old as the marble statue. Find the present age of the statues.", pipeline);
 	    //solveWordProblems("A pewter bowl is 8 years old, and a silver bowl is 22 years old. In how many years will the silver bowl be twice the age of the pewter bowl?", pipeline);
 	    //solveWordProblems("A kerosene lamp is 95 years old, and an electric lamp is 55 years old. How many years ago was the kerosene lamp twice the age of the electric lamp?", pipeline);
-	    solveWordProblems("Ruth is 10 years old. She is 3 years younger than Sam. How old is Sam now?", pipeline);
-
-
-
-
+	    //solveWordProblems("Ruth is 10 years old. She is 3 years younger than Sam. How old is Sam now?", pipeline);
+	    ////solveWordProblems("In 56 years, Daniel will be 5 times as old as he is right now. How old is he right now?", pipeline);
+	    ////solveWordProblems("Arman is 18. Diya is 2. How many years will it take for Arman to be 3 times as old as Diya?", pipeline);
+	    ////solveWordProblems("In 40 years, Imran will be 11 times as old as he is right now. How old is he right now", pipeline);
+	    //solveWordProblems("3 years from now Mary will be 52 years old. In 15 years, the sum of the ages of Mary and Cindy will be 95. How old is Cindy right now?", pipeline);
+	    ////solveWordProblems("Aftab tells his daughter, \'Seven years ago, I was seven times as old as you were then. Also, three years from now, I shall be three times as old as you will be.\'", pipeline);
+	    //solveWordProblems("5 years from now Sharon will be twice as old as Tiffany. The sum of the ages of Sharon and Tiffany is 86. How old is Tiffany right now?", pipeline);
+	    //solveWordProblems("Ruth is 10 years old. Sam is 5 years older than Ruth. How old is Sam?", pipeline);
+	    //solveWordProblems("Ruth is 10 years old. What is Ruth's age 5 years from now?", pipeline);
 	}
 
 	        

@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -73,13 +74,15 @@ public class TrainRules {
 	    String program = "";
 		char base = 'X';
 		int count = 0;
+		String actor = "";
 	    for (CoreMap sentence : sentences) {
 	    	List<CoreLabel> tokens = sentence.get(TokensAnnotation.class);
 	    	boolean quesFlag = false, adjFlag = false;
 	    	ArrayList<String> arguments = new ArrayList<>();
 	    	String predicate = "";
 	    	String adj = "";
-    		for (CoreLabel token: tokens) {
+	    	timer = 0;
+	    	for (CoreLabel token: tokens) {
 	    		String pos = token.tag();
 	    		if (pos.startsWith("W") || token.originalText().toLowerCase().contains("find") || token.originalText().toLowerCase().contains("calculate")) {
 	    			quesFlag = true;
@@ -153,7 +156,7 @@ public class TrainRules {
 		    			 size++;
 	    			 }
 	    		}
-	    		else if (!pos.contains("PRP") && !pos.contains("CC") && !pos.contains("RB") && !pos.contains("MD") && !pos.contains("DT") && !pos.contains(".")) {
+	    		else if (!pos.contains("PRP") && !pos.contains("CC") && !pos.contains("RB") && !pos.contains("TO") && !pos.contains("MD") && !pos.contains("DT") && !pos.contains(".")) {
 	    			if (!pos.contains("IN") && !pos.contains(",")) {
 	    				if (!predicate.isEmpty() && !token.originalText().contains("year")) {
 	    					predicate = predicate + token.originalText().substring(0,1).toUpperCase();
@@ -173,15 +176,24 @@ public class TrainRules {
 	    		begin = "happensAt";
 	    	else
 	    		begin = "holdsAt";
-	    	if (predicate.equals("old"))
+	    	
+	    	if (predicate.equals("old")) {
 	    		predicate = "age";
+	    		for (String s : arguments) {
+	    			if (actors.contains(s))
+	    				actor = s;
+	    		}
+	    	}
+	    	actors.removeAll(Collections.singleton(actor));
 	    	String stmt = begin + "(" + predicate + "(";
-	    	//System.out.println(sentence.toString().contains("their") + "|" + actors);
+	    	System.out.println(actors);
 	    	ArrayList<String> temp = new ArrayList<>();
 	    	if (sentence.toString().contains(" their "))
 	    		temp.addAll(actors);
 	    	temp.addAll(arguments);
 	    	arguments = temp;
+	    	if (predicate.equals("age") && arguments.size() == 1)
+	    		arguments.add("K");
 	    	for (String s : arguments) {
 	    		stmt = stmt + s +",";
 	    	}
@@ -192,12 +204,15 @@ public class TrainRules {
 	    	stmt = stmt.replaceAll(",\\)", ")");
 	    	System.out.println(stmt);
 	    	program = program+stmt+"\n";
-	    	if (predicate.equals("age") && timer == 0) {
+	    	if (predicate.equals("age")) {
 	    		char change = (char) (base+count);
-	    		stmt = stmt.replace("),0)", "+"+change+"),"+change+")");
-	    		count++;
-	    		program = program+stmt+"\n";
+	    		if (timer != 0) {
+	    			stmt = stmt.replace("),"+timer+")", "-"+timer+"+"+change+"), "+change+")");
+	    			count++;
+		    		program = program+stmt+"\n";
+	    		}
 	    	}
+	    	
 		    	
 	    }
 	    program = ans+"\n"+program;
@@ -329,19 +344,24 @@ public class TrainRules {
 	    BufferedWriter bw = new BufferedWriter(fw);
 	    bw.write("");
 	    bw.close();
-	    String ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
+	    String ans = "";
+	    ans = "holdsAt(age(boy,16),0).\nholdsAt(age(brother,6),0).\nholdsAt(age(boy,16+X),X).\nholdsAt(age(brother,6+Y),Y).";
 		convertProblem("A boy is 10 years older than his brother. In 4 years, he will be 2 times as old as his brother. What are their present ages?", ans, pipeline);
+		ans = "holdsAt(age(carmen,25),0).\nholdsAt(age(david,13),0).\nholdsAt(age(carmen,25+X),X).\nholdsAt(age(david,13+Y),Y).";
+		convertProblem("Carmen is 12 years older than David. Five years ago the sum of their ages was 28. How old are they now?", ans, pipeline);
 		ans = "holdsAt(age(brandon,46),0).\nholdsAt(age(ronda,37),0).\nholdsAt(age(brandon,46+X),X).\nholdsAt(age(ronda,37+Y),Y).";
 		convertProblem("Brandon is 9 years older than Ronda. In 4 years the sum of their ages will be 91. How old are they now?", ans, pipeline);
 		ans = "holdsAt(age(pat,38),0).\nholdsAt(age(james,18),0).\nholdsAt(age(pat,38+X),X).\nholdsAt(age(james,18+Y),Y).";
 		convertProblem("Pat is 20 years older than his son James. In two years Pat will be twice as old as James. How old are they now?", ans, pipeline);
-		ans = "holdsAt(age(chinaplate,10),0).\nholdsAt(age(glassplate,6),0).\nholdsAt(age(chinaplate,10+X),X).\nholdsAt(age(glassplate,6+Y),Y).";
-		convertProblem("The sum of the ages of a china plate and a glass plate is 16 years. Four years ago the china plate was three times the age of the glass plate. Find the present age of each plate", ans, pipeline);
 		ans = "holdsAt(age(jason,20),0).\nholdsAt(age(mandy,15),0).\nholdsAt(age(jason,20+X),X).\nholdsAt(age(mandy,15+Y),Y).";
 		convertProblem("The sum of Jason and Mandy's age is 35. Ten years ago Jason was double Mandy's age. How old are they now?", ans, pipeline);
-		ans = "holdsAt(age(father,45),0).\nholdsAt(age(daughter,12),0).\nholdsAt(age(father,45+X),X).\nholdsAt(age(daughter,12+Y),Y).";
-		convertProblem("A daughter is 33 years younger than the father. If the sum of their ages 3 years ago was 51 years, find the present age of the father.", ans, pipeline);
-
+		ans = "holdsAt(age(father,45),0).\nholdsAt(age(daughter,15),0).\nholdsAt(age(father,45+X),X).\nholdsAt(age(daughter,15+Y),Y).";
+		convertProblem("A daughter is 30 years younger than the father. The father is 4 times as old as his daughter 5 years ago. Find the present age of the father.", ans, pipeline);
+		ans = "holdsAt(age(father,45),0).\nholdsAt(age(daughter,15),0).\nholdsAt(age(father,45+X),X).\nholdsAt(age(daughter,15+Y),Y).";
+		convertProblem("The difference between the ages of a father and daughter is 30 years. The father is 4 times as old as his daughter 5 years ago. Find the present age of the father.", ans, pipeline);
+		ans = "holdsAt(age(father,45),0).\nholdsAt(age(daughter,15),0).\nholdsAt(age(father,45+X),X).\nholdsAt(age(daughter,15+Y),Y).";
+		convertProblem("The ratio between the ages of a father and daughter is 3. The father is 4 times as old as his daughter 5 years ago. Find the present age of the father.", ans, pipeline);
+		
 	}
 
 }

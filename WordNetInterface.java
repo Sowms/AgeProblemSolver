@@ -70,7 +70,7 @@ public class WordNetInterface {
         	IWord word = dict.getWord (wordID);         
             ISynset synset = word.getSynset();
             String LexFileName = synset.getLexicalFile().getName();
-            System.out.println("Lexical Name : "+ LexFileName);
+            //System.out.println("Lexical Name : "+ LexFileName + "|" + word);
             if (LexFileName.contains("person"))
             	return true;
             if (LexFileName.contains("cognition") || LexFileName.contains("substance"))
@@ -109,5 +109,7 @@ public class WordNetInterface {
 		System.out.println(isActor("marble"));
 		seen = new ArrayList<>();
 		System.out.println(isActor("silver"));
+		seen = new ArrayList<>();
+		System.out.println(isActor("china"));
 	}
 }
